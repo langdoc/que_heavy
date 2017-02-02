@@ -1,9 +1,9 @@
-setwd("../elan-eugenio")
-
 library(tidyverse)
 library(FRelan)
 
-read_cs_eaf <- function(elan_file = "data/example_good.eaf"){
+# I want to have this later as function, but now I commented this out
+
+# read_cs_eaf <- function(elan_file = "data/example_good.eaf"){
 
 # It is good to test the function by running it line by line, to do that,
 # only thing needed is to create the variable elan_file, which the function
@@ -28,7 +28,15 @@ read_cs_eaf <- function(elan_file = "data/example_good.eaf"){
 # that is the item we want to have on one row. As far as I see, in order to follow tidy
 # data principles with linguistic data, the best possibility is to have something like
 # one token per row, although in some cases other ways of doing it are certainly also OK.
+#
+# This time the file structure demands a bit different approach, since some of the elements
+# are not connected through annotation id's but the time codes. There is a function 
+# `read_timeslots()` which can be used to access the timeslots in the file.
+# 
+# In this case def, words and syntax have the time slots.
 
-        left_join(words, syntax)
+        left_join(words, def %>% rename(file))
 
-}
+        read_timeslots(elan_file)
+
+# }
