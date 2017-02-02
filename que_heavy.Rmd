@@ -1,0 +1,78 @@
+---
+title: "Gibraltar code-switching data to R"
+author: "Niko Partanen"
+date: "2 February 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+# library(devtools)
+# install_github("langdoc/FRelan")
+library(FRelan)
+```
+
+I first though to write this directly into function, but there are some things in the ELAN file structure which need some more thinking. I haven't usually encountered files with this many time aligned items, and this means it is necessary to join the file with those. This isn't any problem, but needs bit different approach than what I have usually had. It also illustrates well why it is so difficult to have a general solution that fits for every situation! Each project has very different ELAN file structures, and these are usually very well justified by the demands the reserach question has and so forth.
+
+However, I also think that the majority of the corpora can be expressed in a tidy data frame with one token per row which has relatively similar structure across the corpora.
+
+I was thinking of having both good and bad example so that one could easily illustrate how the reading can fail with different issues in the ELAN files. Now I have only good example though.
+
+```{r}
+
+elan_file <- "data/example_good.eaf"
+
+```
+
+Here we get one by one different tiers by their linguistic types
+
+```{r}
+
+def <- read_tier(elan_file, linguistic_type = "default-lt")
+words <- read_tier(elan_file, linguistic_type = "Words")
+language <- read_tier(elan_file, linguistic_type = "Language")
+syntax <- read_tier(elan_file, linguistic_type = "Syntax")
+
+```
+
+After receiving those (one can check how they look for example with `View(syntax)` ) we need to join these to one another to build one large data frame, and this is easily achieved by following the logic already present in the ELAN file. So if one looks the  way the ID's are constructed there, the tier always has annotation_ref attributes which then again are annotation_id's of the tier above.
+
+I usually look in this point which is the elements contains most elements, since often that is the item we want to have on one row. As far as I see, in order to follow tidy data principles with linguistic data, the best possibility is to have something like one token per row, although in some cases other ways of doing it are certainly also OK.
+
+This time the file structure demands a bit different approach, since some of the elements are not connected through annotation id's but the time codes. There is a function  `read_timeslots()` which can be used to access the timeslots in the file.
+
+In this case def, words and syntax have the time slots.
+
+The idea here is that we use left_join function to put the data frames together but we can control the exact way how they join by renaming the columns and selecting or unselecting some of them before the join is done. For example, the content is renamed utterance and so on.
+
+```{r}
+timeslots <- read_timeslots(elan_file)
+```
+
+I find this step often bit hard to understand, but basically we join the timeslots to the previous data frame twice, because with the first join we get the start time, and with the second one the end time.
+
+```{r}
+
+add_timeslots <- function(df){
+        df %>%  left_join(timeslots %>% rename(time_slot_1 = time_slot_id, time_start = time_value)) %>%
+                left_join(timeslots %>% rename(time_slot_2 = time_slot_id, time_end = time_value))
+}
+
+def <- add_timeslots(def)
+words <- add_timeslots(words)
+syntax <- add_timeslots(syntax)
+
+```
+
+Now those data frames have the actual start and end times per item. 
+
+```{r}
+def
+words
+syntax
+```
+
