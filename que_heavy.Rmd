@@ -22,7 +22,7 @@ I first though to write this directly into function, but there are some things i
 
 However, I also think that the majority of the corpora can be expressed in a tidy data frame with one token per row which has relatively similar structure across the corpora.
 
-I was thinking of having both good and bad example so that one could easily illustrate how the reading can fail with different issues in the ELAN files. Now I have only good example though.
+I was thinking of having both good and bad example so that one could easily illustrate how the reading can fail with different issues in the ELAN files. Now I have only good example. No file is yet part of the repository, but in principle there could be an almost empty anonymized dummy file which could be used to illustrate the logic behind the parsing strategy.
 
 ```{r}
 
@@ -78,3 +78,8 @@ words
 syntax
 ```
 
+### Notes
+
+- I used to do lots of things with `plyr` package, but now that is not part of the so-called `tidyverse`, and apparently one can use package `purrr` to do similar loop like operations to data frames in more elegant manner
+- `FRelan` package still uses a lot `XML` package, and should probably be updated to work with `xml2`
+- There are probably some new and better ways to rewrite the whole `read_tier` and `read_eaf` functions, but I think we can't get anywhere from this reading tiers as data frames and joining them by the logic which is present in the ELAN file. Or maybe there is some smarter way, but I can't imagine how it exactly should go! 
