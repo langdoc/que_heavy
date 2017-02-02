@@ -16,6 +16,8 @@ library(tidyverse)
 library(FRelan)
 ```
 
+This text is connected to Eugenio Gorio's code-switching data, but possibly could be used also with other similar datasets.
+
 I first though to write this directly into function, but there are some things in the ELAN file structure which need some more thinking. I haven't usually encountered files with this many time aligned items, and this means it is necessary to join the file with those. This isn't any problem, but needs bit different approach than what I have usually had. It also illustrates well why it is so difficult to have a general solution that fits for every situation! Each project has very different ELAN file structures, and these are usually very well justified by the demands the reserach question has and so forth.
 
 However, I also think that the majority of the corpora can be expressed in a tidy data frame with one token per row which has relatively similar structure across the corpora.
