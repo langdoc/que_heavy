@@ -14,6 +14,7 @@ library(tidyverse)
 # library(devtools)
 # install_github("langdoc/FRelan")
 library(FRelan)
+library(stringr)
 ```
 
 This text is connected to Eugenio Gorio's code-switching data, but possibly could be used also with other similar datasets.
@@ -70,13 +71,61 @@ syntax <- add_timeslots(syntax)
 
 ```
 
-Now those data frames have the actual start and end times per item. 
+Now those data frames have the actual start and end times per item. It seems that the `def` and `syntax` have the start and end times for each row, but the `words` does not have those always. I need to figure out why it is like that, probably because of the linguistic types as they are? 
 
 ```{r}
+
+library(tidytext)
+
 def
 words
-syntax
+
+# As far as I see the language tier doesn't need those variables, so I remove them to keep it more simple
+# When done this way, the join is controlled by the connecting id only.
+
+syntax_lang <- left_join(syntax %>% 
+                  rename(join_id = annot_id,
+                         syntax = content) %>%
+                  select(-ref_id, -tier_id), 
+          language %>% 
+                  rename(join_id = ref_id,
+                         lang = content) %>%
+                            select(-time_slot_1, -time_slot_2, -type, -tier_id, -annot_id, -participant),
+          by = "join_id")
+
 ```
+
+So now we have one data frame which contains both syntax and language tiers.
+
+To deal with the words, there seems to be a pattern that when the `time_start` occurs, in a row before that there is a `time_end` value. So we can detect each unique `time_start` and treat it as a one span, and with this information add a variable `segment`. The first and last row of the segment carry information about the beginning and time of that span. 
+
+```{r}
+words <- words %>% mutate(segment = cumsum(grepl("\\d", as.character(time_start)))) %>%
+        group_by(segment) %>% mutate(time_start = first(time_start),
+                                     time_end = last(time_end)) %>%
+        ungroup()
+
+words
+```
+
+Now all tiers are in data frames and we have as complete time information about them as possible. It should be easy to join now the words with the utterances they belong to.
+
+```{r}
+
+words %>% filter(str_detect(content, "army"))
+def %>% filter(str_detect(content, "army"))
+
+words
+
+def_start <- def %>% rename(utterance = content) %>% filter() %>%
+                  select(-annot_id, -ref_id, -tier_id, -type, -time_slot_1, -time_slot_2, -time_end, -participant)
+
+
+
+left_join(words, ) %>% View()
+
+```
+
 
 ### Notes
 
