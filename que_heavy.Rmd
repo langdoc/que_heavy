@@ -91,7 +91,7 @@ syntax_lang <- left_join(syntax %>%
                   rename(join_id = ref_id,
                          lang = content) %>%
                             select(-time_slot_1, -time_slot_2, -type, -tier_id, -annot_id, -participant),
-          by = "join_id")
+          by = "join_id") %>% select(syntax, lang, time_start, time_end, join_id)
 
 ```
 
@@ -112,20 +112,32 @@ Now all tiers are in data frames and we have as complete time information about 
 
 ```{r}
 
-words %>% filter(str_detect(content, "army"))
-def %>% filter(str_detect(content, "army"))
+words <- words %>% mutate(word_id = 1:n()) %>% rename(token = content)
+def <- def %>% rename(utterance = content)
 
-words
+words %>% filter(str_detect(token, "army"))
+def %>% filter(str_detect(utterance, "army"))
 
-def_start <- def %>% rename(utterance = content) %>% filter() %>%
-                  select(-annot_id, -ref_id, -tier_id, -type, -time_slot_1, -time_slot_2, -time_end, -participant)
+words_start <- words %>% filter(time_start %in% def$time_start)
+words_end <- words %>% filter(time_start %in% def$time_end)
+words_missing <- words %>% filter(! word_id %in% c(words_start$word_id, words_end$word_id))
 
+def_join <- def %>% select(-annot_id, -ref_id, -tier_id, -type, -time_slot_1, -time_slot_2, -participant)
 
-
-left_join(words, ) %>% View()
+rbind(left_join(words_start, def_join %>% select(-time_end)) %>% 
+              left_join(words_end %>% select(token, time_end)), 
+      words_missing %>% mutate(utterance = NA)) %>%
+        arrange(word_id) %>% 
+        select(token, utterance, participant, segment, word_id, time_start, time_end) %>% 
+        mutate(time_start = plyr::round_any(time_start, 10),
+                                         time_end = plyr::round_any(time_end, 10)) %>%
+        left_join(syntax_lang %>% 
+                          mutate(time_start = plyr::round_any(time_start, 10),
+                                         time_end = plyr::round_any(time_end, 10)))
 
 ```
 
+Currently the problem is that in syntax and language annotations the time spans are smaller than on higher level, and this makes joining them as easily as I thought bit difficult. It should be doable anyway, as this is systematic.
 
 ### Notes
 
